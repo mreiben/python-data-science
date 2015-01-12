@@ -3,7 +3,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import statsmodels.api as sm
 
-df = pd.read_csv('LoanStats3b.csv', header=1, low_memory=False)
+df = pd.read_csv('LoanStats3a.csv', header=1, low_memory=False)
 # converts string to datetime object in pandas:
 df['list_d_format'] = pd.to_datetime(df['issue_d'])
 
