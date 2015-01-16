@@ -11,7 +11,7 @@ df_market = pd.DataFrame({'bull': [.9,.15,.25], 'bear': [.075,.8,.25], 'stagnant
 
 print df_market
 
-print df_market.dot(df_market.dot(df_market))
+print df_market.dot(df_market.dot(df_market.dot(df_market.dot(df_market))))
 # probabilities after 2 transitions:
 #bull      0.13375  0.8275   0.03875
 #bear      0.66375  0.2675   0.06875
