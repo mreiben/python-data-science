@@ -15,6 +15,8 @@ for station in r.json()['stationBeanList']:
 # print key_list
 
 df = json_normalize(r.json()['stationBeanList'])
+#rename id column to avoid SQL error
+df.rename(columns={'id': 'station_id'}, inplace=True)
 
 # df['availableBikes'].hist()
 # plt.show()
@@ -42,10 +44,10 @@ cur = con.cursor()
 
 #the lines below create the table, but only need to run once
 # with con: #create a table in sqlite for the static values
-#     cur.execute('CREATE TABLE citibike_reference (id INT PRIMARY KEY, totalDocks INT, city TEXT, altitude INT, stAddress2 TEXT, longitude NUMERIC, postalCode TEXT, testStation TEXT, stAddress1 TEXT, stationName TEXT, landMark TEXT, latitude NUMERIC, location TEXT )')
+#     cur.execute('CREATE TABLE citibike_reference (station_id INT, totalDocks INT, city TEXT, altitude INT, stAddress2 TEXT, longitude NUMERIC, postalCode TEXT, testStation TEXT, stAddress1 TEXT, stationName TEXT, landMark TEXT, latitude NUMERIC, location TEXT )')
 
 # #a prepared SQL statement we're going to execute over and over again
-# sql = "INSERT INTO citibike_reference (id, totalDocks, city, altitude, stAddress2, longitude, postalCode, testStation, stAddress1, stationName, landMark, latitude, location) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)"
+# sql = "INSERT INTO citibike_reference (station_id, totalDocks, city, altitude, stAddress2, longitude, postalCode, testStation, stAddress1, stationName, landMark, latitude, location) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)"
 
 # #for loop to populate values in the database
 # with con:
@@ -53,15 +55,15 @@ cur = con.cursor()
 #         #id, totalDocks, city, altitude, stAddress2, longitude, postalCode, testStation, stAddress1, stationName, landMark, latitude, location)
 #         cur.execute(sql,(station['id'],station['totalDocks'],station['city'],station['altitude'],station['stAddress2'],station['longitude'],station['postalCode'],station['testStation'],station['stAddress1'],station['stationName'],station['landMark'],station['latitude'],station['location']))
 
-#extract the column from the DataFrame and put them into a list
-station_ids = df['id'].tolist() 
+# #extract the column from the DataFrame and put them into a list
+# station_ids = df['station_id'].tolist() 
 
-#add the '_' to the station name and also add the data type for SQLite
-station_ids = ['_' + str(x) + ' INT' for x in station_ids]
+# #add the '_' to the station name and also add the data type for SQLite
+# station_ids = ['_' + str(x) + ' INT' for x in station_ids]
 
-#the lines below create the table, but only need to run once
-#create the table for the dynamic values
-#in this case, we're concatentating the string and joining all the station ids (now with '_' and 'INT' added)
+# #the lines below create the table, but only need to run once
+# #create the table for the dynamic values
+# #in this case, we're concatentating the string and joining all the station ids (now with '_' and 'INT' added)
 # with con:
 #     cur.execute("CREATE TABLE available_bikes ( execution_time INT, " +  ", ".join(station_ids) + ");")
 
@@ -76,11 +78,11 @@ import collections
 for i in xrange(60):
     #download the data again
     r = requests.get('http://www.citibikenyc.com/stations/json')
+    #for loop to populate values in the database
 
     #a prepared SQL statement we're going to execute over and over again
-    sql = "INSERT INTO citibike_reference (id, totalDocks, city, altitude, stAddress2, longitude, postalCode, testStation, stAddress1, stationName, landMark, latitude, location) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)"
+    sql = "INSERT INTO citibike_reference (station_id, totalDocks, city, altitude, stAddress2, longitude, postalCode, testStation, stAddress1, stationName, landMark, latitude, location) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)"
 
-    #for loop to populate values in the database
     with con:
         for station in r.json()['stationBeanList']:
             #id, totalDocks, city, altitude, stAddress2, longitude, postalCode, testStation, stAddress1, stationName, landMark, latitude, location)
