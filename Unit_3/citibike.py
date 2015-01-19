@@ -69,41 +69,79 @@ cur = con.cursor()
 
 # a package with datetime objects
 import time
+import datetime
 
 # a package for parsing a string into a Python datetime object
 from dateutil.parser import parse 
 
 import collections
 
-for i in xrange(60):
-    #download the data again
-    r = requests.get('http://www.citibikenyc.com/stations/json')
-    #for loop to populate values in the database
+# for i in xrange(60):
+#     #download the data again
+#     r = requests.get('http://www.citibikenyc.com/stations/json')
+#     #for loop to populate values in the database
 
-    #a prepared SQL statement we're going to execute over and over again
-    sql = "INSERT INTO citibike_reference (station_id, totalDocks, city, altitude, stAddress2, longitude, postalCode, testStation, stAddress1, stationName, landMark, latitude, location) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)"
+#     #a prepared SQL statement we're going to execute over and over again
+#     sql = "INSERT INTO citibike_reference (station_id, totalDocks, city, altitude, stAddress2, longitude, postalCode, testStation, stAddress1, stationName, landMark, latitude, location) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)"
 
-    with con:
-        for station in r.json()['stationBeanList']:
-            #id, totalDocks, city, altitude, stAddress2, longitude, postalCode, testStation, stAddress1, stationName, landMark, latitude, location)
-            cur.execute(sql,(station['id'],station['totalDocks'],station['city'],station['altitude'],station['stAddress2'],station['longitude'],station['postalCode'],station['testStation'],station['stAddress1'],station['stationName'],station['landMark'],station['latitude'],station['location']))
+#     with con:
+#         for station in r.json()['stationBeanList']:
+#             #id, totalDocks, city, altitude, stAddress2, longitude, postalCode, testStation, stAddress1, stationName, landMark, latitude, location)
+#             cur.execute(sql,(station['id'],station['totalDocks'],station['city'],station['altitude'],station['stAddress2'],station['longitude'],station['postalCode'],station['testStation'],station['stAddress1'],station['stationName'],station['landMark'],station['latitude'],station['location']))
 
-    #take the string and parse it into a Python datetime object
-    exec_time = parse(r.json()['executionTime'])
+#     #take the string and parse it into a Python datetime object
+#     exec_time = parse(r.json()['executionTime'])
 
-    #create an entry for the execution time by inserting it into the db
-    with con:
-        cur.execute('INSERT INTO available_bikes (execution_time) VALUES (?)', (exec_time.strftime('%s'),))
+#     #create an entry for the execution time by inserting it into the db
+#     with con:
+#         cur.execute('INSERT INTO available_bikes (execution_time) VALUES (?)', (exec_time.strftime('%s'),))
 
-    id_bikes = collections.defaultdict(int) #defaultdict to store available bikes by station
+#     id_bikes = collections.defaultdict(int) #defaultdict to store available bikes by station
 
-    #loop through the stations in the station list, populating the number of available bikes under the station id
-    for station in r.json()['stationBeanList']:
-        id_bikes[station['id']] = station['availableBikes']
+#     #loop through the stations in the station list, populating the number of available bikes under the station id
+#     for station in r.json()['stationBeanList']:
+#         id_bikes[station['id']] = station['availableBikes']
 
-    #iterate through the defaultdict to update the values in the database
-    with con:
-        for k, v in id_bikes.iteritems():
-            cur.execute("UPDATE available_bikes SET _" + str(k) + " = " + str(v) + " WHERE execution_time = " + exec_time.strftime('%s') + ";")
+#     #iterate through the defaultdict to update the values in the database
+#     with con:
+#         for k, v in id_bikes.iteritems():
+#             cur.execute("UPDATE available_bikes SET _" + str(k) + " = " + str(v) + " WHERE execution_time = " + exec_time.strftime('%s') + ";")
 
-    time.sleep(60)
+#     time.sleep(60)
+
+con = lite.connect('citi_bike.db')
+cur = con.cursor()
+
+df = pd.read_sql_query("SELECT * FROM available_bikes ORDER BY execution_time", con,index_col='execution_time')
+
+hour_change = collections.defaultdict(int)
+for col in df.columns:
+    station_vals = df[col].tolist() #sets all values in the column to a list
+    station_id = col[1:] #trims the "_"from the column name
+    station_change = 0 #defines variable to track total change between each timestamp
+    for k,v in enumerate(station_vals): #returns the index (k) as well as the item (v)
+        if k < len(station_vals) - 1: #repeat until 2nd to last value in the list
+            station_change += abs(station_vals[k] - station_vals[k+1])
+    hour_change[int(station_id)] = station_change #saves the total change to the hour_change dictionary for each station id
+
+#find the station with the highest number of changes over the hour tracked in the db
+
+def keyWithMaxVal(d):
+    # create a list of the dict's keys and values;
+    v = list(d.values())
+    k = list(d.keys())
+
+    #return the station (k) with the max value (v)
+    return k[v.index(max(v))]
+
+#define a variable to store the station with the highest volumne of change
+max_station = keyWithMaxVal(hour_change)
+
+#query sqlite for reference information
+cur.execute("SELECT station_id, stationname, latitude, longitude FROM citibike_reference WHERE station_id = ?", (max_station,))
+data = cur.fetchone()
+print "The most active station is station id %s at %s latitude: %s longitude: %s " % data
+print "With " + str(hour_change[max_station]) + " bicycles coming and going in the hour between " + datetime.datetime.fromtimestamp(int(df.index[0])).strftime('%Y-%m-%dT%H:%M:%S') + " and " + datetime.datetime.fromtimestamp(int(df.index[-1])).strftime('%Y-%m-%dT%H:%M:%S')
+
+plt.bar(hour_change.keys(), hour_change.values())
+plt.show()
