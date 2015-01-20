@@ -7,7 +7,7 @@ import sqlite3 as lite
 cities = { "Chicago": '41.837551,-87.681844',
 			"Cleveland": '41.478462,-81.679435',
 			"Denver":'39.761850,-104.881105',
-			"New York": '40.663619,-73.938589',
+			"NewYork": '40.663619,-73.938589',
 			"Philadelphia": '40.009376,-75.133346'
 		}
 
@@ -24,21 +24,22 @@ str_start_date = str(start_date)
 #parse datetime to match api requirements
 parsed_str_start_date = str_start_date[0:10]+"T"+str_start_date[11:19]
 
-api_call_chicago = "https://api.forecast.io/forecast/"+api_key+"/"+cities["Chicago"]+","+parsed_str_start_date
+api_call_chicago = url + cities["Chicago"]+","+parsed_str_start_date
 
 r = requests.get(api_call_chicago)
 
 #create dataframe
-df = json_normalize(r.json()['daily']['data'])
+df = r.json()['daily']['data'][0]['temperatureMax']
 
 #print df['temperatureMax']
 
 con = lite.connect('weather.db')
 cur = con.cursor()
 
-the lines below create the table, but only need to run once
+#the lines below create the table, but only need to run once
 with con: #create a table in sqlite
-	cur.execute('CREATE TABLE daily_temp ( day_of_reading INT, Chicago REAL, Cleveland REAL, Denver REAL, New York REAL, Philadelphia REAL);')
+	cur.execute('DROP TABLE IF EXISTS daily_temp')
+	cur.execute('CREATE TABLE daily_temp ( day_of_reading INT, Chicago REAL, Cleveland REAL, Denver REAL, NewYork REAL, Philadelphia REAL);')
 
 with con:
 	while start_date < end_date:
@@ -50,19 +51,37 @@ for k, v in cities.iteritems():
 	while query_date < end_date:
         #query for the value
 		r = requests.get(url + v + ',' + query_date.strftime('%Y-%m-%dT12:00:00'))
-
-        with con:
-            #insert the temperature max to the database
-            cur.execute('UPDATE daily_temp SET ' + k + ' = ' + str(r.json()['daily']['data'][0]['temperatureMax']) + ' WHERE day_of_reading = ' + query_date.strftime('%s'))
-
-        #increment query_date to the next day for next operation of loop
-        query_date += datetime.timedelta(days=1) #increment query_date to the next day
+		with con:
+			#insert the temperature max to the database
+			cur.execute('UPDATE daily_temp SET ' + k + ' = ' + str(r.json()['daily']['data'][0]['temperatureMax']) + ' WHERE day_of_reading = ' + query_date.strftime('%s'))
+		#increment query_date to the next day for the next operation of the loop
+		query_date += datetime.timedelta(days=1)
 
 con.close() # a good practice to close connection to database
 
-# con = lite.connect('weather.db')
-# cur = con.cursor()
+con = lite.connect('weather.db')
+cur = con.cursor()
 
-# df = pd.read_sql_query("SELECT * FROM daily_temp", con)
+df = pd.read_sql_query("SELECT * FROM daily_temp", con)
 
-# print df['day_of_reading']
+
+for k, v in cities.iteritems():
+	print k + " mean = " + str(df[k].mean())
+	print k + " range = " + str(df[k].min()) + "-" + str(df[k].max())
+	print k + " variance = " + str(df[k].var())
+
+# NewYork mean = 39.0573333333
+# NewYork range = 19.72-59.96
+# NewYork variance = 113.52619954
+# Cleveland mean = 34.2343333333
+# Cleveland range = 12.95-59.2
+# Cleveland variance = 196.746032299
+# Philadelphia mean = 40.2013333333
+# Philadelphia range = 17.21-63.85
+# Philadelphia variance = 144.545156782
+# Denver mean = 37.1713333333
+# Denver range = 1.09-58.04
+# Denver variance = 161.506991264
+# Chicago mean = 30.6353333333
+# Chicago range = 6.93-49.86
+# Chicago variance = 143.95888092
