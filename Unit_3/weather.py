@@ -26,10 +26,10 @@ parsed_str_start_date = str_start_date[0:10]+"T"+str_start_date[11:19]
 
 api_call_chicago = url + cities["Chicago"]+","+parsed_str_start_date
 
-r = requests.get(api_call_chicago)
+# r = requests.get(api_call_chicago)
 
-#create dataframe
-df = r.json()['daily']['data'][0]['temperatureMax']
+# #create dataframe
+# df = r.json()['daily']['data'][0]['temperatureMax']
 
 #print df['temperatureMax']
 
@@ -64,6 +64,7 @@ cur = con.cursor()
 
 df = pd.read_sql_query("SELECT * FROM daily_temp", con)
 
+print df[0:3]
 
 for k, v in cities.iteritems():
 	print k + " mean = " + str(df[k].mean())
@@ -85,3 +86,12 @@ for k, v in cities.iteritems():
 # Chicago mean = 30.6353333333
 # Chicago range = 6.93-49.86
 # Chicago variance = 143.95888092
+total_change = collections.defaultdict(int)
+
+# for col in df.columns:
+# 	temp_values = df[col].tolist()
+# 	temp_change = 0
+# 	for k, v in enumerate(temp_values):
+# 		if k < len(temp_values) - 1:
+# 			temp_change += abs(temp_vals[k] - temp_vals[k+1])
+# 	total_change[]
