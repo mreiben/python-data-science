@@ -4,6 +4,12 @@ import re
 import pandas as pd
 from pandas.io.json import json_normalize
 import sqlite3 as lite
+import csv
+import matplotlib.pyplot as plt
+import numpy as np
+import statsmodels.api as sm
+import math
+
 
 url = "http://web.archive.org/web/20110514112442/http://unstats.un.org/unsd/demographic/products/socind/education.htm"
 
@@ -32,7 +38,7 @@ cur = con.cursor()
 #the lines below create the table
 with con: #create a table in sqlite
 	cur.execute('DROP TABLE IF EXISTS school_life_expectancy')
-	cur.execute('CREATE TABLE school_life_expectancy ( country REAL, year REAL, total REAL, men REAL, women REAL);')
+	cur.execute('CREATE TABLE school_life_expectancy ( country_name REAL, year TEXT, total REAL, men REAL, women REAL);')
 
 #insert values into the table
 with con:
@@ -47,18 +53,14 @@ with con:
 		row_men_parsed = float(re.findall(r"^.*\>(.*)\<.*$", row_men)[0])
 		row_women = str(rows[x].find_all('td')[10])
 		row_women_parsed = float(re.findall(r"^.*\>(.*)\<.*$", row_women)[0])
-		cur.execute("INSERT INTO school_life_expectancy(country, year, total, men, women) VALUES (?, ?, ?, ?, ?)", (row_country_parsed, row_year_parsed, row_total_parsed, row_men_parsed, row_women_parsed))
+		cur.execute("INSERT INTO school_life_expectancy(country_name, year, total, men, women) VALUES (?, ?, ?, ?, ?)", (row_country_parsed, row_year_parsed, row_total_parsed, row_men_parsed, row_women_parsed))
 
 df = pd.read_sql_query("SELECT * FROM school_life_expectancy", con)
-
-# print df[0:3]
 
 # print "men mean:", df['men'].mean() #12.25806
 # print "men median:", df['men'].median() #12
 # print "women mean:", df['women'].mean() #12.4516129
 # print "women median:", df['women'].median() #13
-
-import csv
 
 with con: #create a table in sqlite fpr GDP data
 	cur.execute('DROP TABLE IF EXISTS gdp')
@@ -74,6 +76,30 @@ with open('ny.gdp.mktp.cd_Indicator_en_csv_v2.csv','rU') as inputFile:
         	gdp_values = [line[0], line[42], line[43], line[44], line[45], line[46], line[47], line[48], line[49], line[50], line[51], line[52], line[53]]
         	cur.execute('INSERT INTO gdp (country_name, _1999, _2000, _2001, _2002, _2003, _2004, _2005, _2006, _2007, _2008, _2009, _2010) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)', gdp_values)
 
-df = pd.read_sql_query("SELECT * FROM gdp", con)
+#join matching rows from gdp and school_life_expectancy tables
+df = pd.read_sql_query('SELECT * FROM gdp INNER JOIN school_life_expectancy ON school_life_expectancy.country_name = gdp.country_name', con)
 
-print df[0:10]
+#add _ to year column to match column titles
+df['year'] = map(lambda x: ("_"+str(x)), df['year'])
+#select the gdp for the year that school life expectancy was surveyed
+df['gdp_year'] = [df[x][i] for i,x in enumerate(df['year'])]
+
+df = df[df['gdp_year'] != '']
+
+#df['gdp_year'] = [float(df[x]) for x in df['gdp_year']]
+
+gdp_year_values = df['gdp_year']
+school_life_total = df['total']
+
+# The dependent variable
+y = np.matrix(gdp_year_values).transpose()
+# The independent variable
+x = np.matrix(school_life_total).transpose()
+
+#creat a linear model
+X = sm.add_constant(x)
+model = sm.OLS(y,X)
+f = model.fit()
+
+#output the results
+print f.params #-518215765880.76276 58874510310.842545

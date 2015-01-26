@@ -12,20 +12,9 @@ for station in r.json()['stationBeanList']:
         if k not in key_list:
             key_list.append(k)
 
-# print key_list
-
 df = json_normalize(r.json()['stationBeanList'])
 #rename id column to avoid SQL error
 df.rename(columns={'id': 'station_id'}, inplace=True)
-
-# df['availableBikes'].hist()
-# plt.show()
-
-# df['totalDocks'].hist()
-# plt.show()
-
-# df['availableDocks'].hist()
-# plt.show()
 
 grouped = df.groupby('statusValue').count() #returns 327 'In Service' stations & 5 'Not  In Service'
 
