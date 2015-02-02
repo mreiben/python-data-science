@@ -53,7 +53,7 @@ print ("Number of mislabeled points of a total %d points: %d" %(len(weightData.i
 
 #predict the sex for actual: 145, ideal: 160, diff: -15
 d = {'actual': 145, 'ideal': 160, 'diff': -15}
-df = pd.DataFrame(data=d, index[1])
+df = pd.DataFrame(data=d, index=[1])
 pred = clf.fit(data,target).predict(df)
 print(pred)
 #0 = male for this data set
