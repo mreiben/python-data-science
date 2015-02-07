@@ -11,7 +11,7 @@ cities = { "Chicago": '41.837551,-87.681844',
 			"Philadelphia": '40.009376,-75.133346'
 		}
 
-api_key = "d0bf3238797f7efc5cb6a86fd1128d12"
+api_key = ""
 
 #https://api.forecast.io/forecast/APIKEY/LATITUDE,LONGITUDE,TIME
 url = "https://api.forecast.io/forecast/"+api_key+"/"

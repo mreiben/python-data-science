@@ -42,18 +42,30 @@ weightData['sex'] = pd.Categorical(weightData['sex'])
 print weightData[0:4]
 
 data = weightData[['actual', 'ideal', 'diff']]
+data_array = []
+for i in range(len(data)):
+	data_array.append([data['actual'][i], data['ideal'][i], data['diff'][i]])
+
 target = weightData['sex']
 
+target_array = []
+for i in range(len(data)):
+	target_array.append(weightData['sex'][i])
+
+data_array = np.array(data_array)
+print data_array
+
+target_array = np.array(target_array)
+print target_array
+
 clf = GaussianNB()
-y_pred = clf.fit(data, target).predict(data)
+y_pred = clf.fit(data_array, target_array).predict(data_array)
 
 print ("Number of mislabeled points of a total %d points: %d" %(len(weightData.index), (target != y_pred).sum()))
 
 #Number of mislabeled points of a total 182 points: 14
 
 #predict the sex for actual: 145, ideal: 160, diff: -15
-d = {'actual': 145, 'ideal': 160, 'diff': -15}
-df = pd.DataFrame(data=d, index=[1])
-pred = clf.fit(data,target).predict(df)
+pred = clf.fit(data_array,target_array).predict([[145, 160, -15]])
 print(pred)
 #0 = male for this data set
