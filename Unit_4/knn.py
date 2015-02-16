@@ -46,4 +46,4 @@ def knn(k):
 	class_count = Counter(data['class']).most_common()
 	return class_count[0][0]
 
-print "Based on the ten nearest neighbors, n iris with a sepal width of", random_width, "and a sepal length of", random_length, "is most likely a", knn(10), "iris!"
+print "Based on the ten nearest neighbors, an iris with a sepal width of", random_width, "and a sepal length of", random_length, "is most likely a", knn(10), "iris!"
