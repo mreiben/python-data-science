@@ -31,6 +31,7 @@ for i, v in gradeData['PERIOD'].iteritems():
 
 gradeData = gradeData[gradeData.PERIOD != 'na']
 gradeData = gradeData[gradeData.EXCLUDE_FROM_GPA != "Exclude from GPA"]
+gradeData = gradeData[gradeData.STORECODE == 'Y1']
 gradeData['PERIOD'] = gradeData['PERIOD'].astype(int)
 
 #print list(gradeData.columns.values)
@@ -41,7 +42,6 @@ gradeData['PERIOD'] = gradeData['PERIOD'].astype(int)
 
 period = gradeData['PERIOD']
 percent = gradeData['PERCENT']
-period_percent_data = gradeData[['PERIOD', 'PERCENT']]
 
 #The dependent variable
 y = np.matrix(percent).transpose()
@@ -56,20 +56,26 @@ f = model.fit()
 print f.params
 
 gradeData1 = gradeData[gradeData.PERIOD == 1]
+print gradeData1.describe() #percent mean: 78, std: 
 gradeData1 = gradeData1['PERCENT'].values
-plt.hist(gradeData1, alpha=0.5, label='1st Period')
+# plt.hist(gradeData1, alpha=0.5, label='1st Period')
+plt.hist(gradeData1, weights=np.zeros_like(gradeData1) + 100. / gradeData1.size, alpha=0.5, label='1st Period')
 
 gradeData5 = gradeData[gradeData.PERIOD == 5]
+#print gradeData5.describe() # percent mean: 78.14, std: 10.56
 gradeData5 = gradeData5['PERCENT'].values
-plt.hist(gradeData5, alpha=0.5, label='5th Period')
+# plt.hist(gradeData5, alpha=0.5, label='5th Period')
+plt.hist(gradeData5, weights=np.zeros_like(gradeData5) + 100. / gradeData5.size, alpha=0.5, label='5th Period')
 
 gradeData8 = gradeData[gradeData.PERIOD == 8]
+print gradeData8.describe() # percent mean: 77, std: 10.36
 gradeData8 = gradeData8['PERCENT'].values
-plt.hist(gradeData8, alpha=0.5, label='8th Period')
+# plt.hist(gradeData8, alpha=0.5, label='8th Period')
+plt.hist(gradeData8, weights=np.zeros_like(gradeData8) + 100. / gradeData8.size, alpha=0.5, label='8th Period')
 
 plt.legend(loc='upper left')
+plt.xlabel('Score')
+plt.ylabel('Frequency')
+
 plt.show()
 plt.close()
-
-# plt.scatter(x, y)
-# plt.show()
